@@ -1,0 +1,20 @@
+.DS_Store
+mcp-server/visualization/serve.log
+.claude-docs/
+hooks/tests/.claude-docs/
+
+# Локальные исследовательские артефакты, не для git
+docs/ClaudSoul-vs-top3-memory-systems.pdf
+docs/comparison-memory-systems.html
+
+# Личные данные владельца репозитория — не для публичной раздачи
+# (история git до v1.7.5 ещё содержит эти файлы; для полной очистки
+# из истории — отдельная задача, требует git filter-repo или нового репо)
+SESSION.md
+SESSION-archive*.md
+docs/internal-doc.md
+CLAUDE.md.bak.*
+
+# Артефакты запуска python-скриптов (regen-seed, воркеры бэкфилла)
+__pycache__/
+*.pyc
