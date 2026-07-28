@@ -7,7 +7,8 @@ $ErrorActionPreference = "Stop"
 $token = "agentsoul-smoke-$([guid]::NewGuid().ToString('N'))"
 $home = Join-Path $env:TEMP "agentsoul-smoke-$([guid]::NewGuid().ToString('N'))"
 $baseUrl = "http://127.0.0.1:$Port"
-$logPath = Join-Path $home "server.log"
+$stdoutPath = Join-Path $home "server.stdout.log"
+$stderrPath = Join-Path $home "server.stderr.log"
 $server = $null
 
 function Assert-True([bool]$Condition, [string]$Message) {
@@ -26,8 +27,8 @@ try {
     $server = Start-Process -FilePath $Python `
         -ArgumentList @("-m", "agentsoul_mcp.server") `
         -PassThru -WindowStyle Hidden `
-        -RedirectStandardOutput $logPath `
-        -RedirectStandardError $logPath
+        -RedirectStandardOutput $stdoutPath `
+        -RedirectStandardError $stderrPath
 
     $ready = $false
     for ($attempt = 0; $attempt -lt 40; $attempt++) {
@@ -44,7 +45,7 @@ try {
         Invoke-RestMethod -Uri "$baseUrl/api/snapshot" -Method Get -TimeoutSec 3 | Out-Null
         throw "FAILED: private API accepted a request without a token"
     } catch {
-        $status = $_.Exception.Response.StatusCode.value__
+        $status = [int]$_.Exception.Response.StatusCode
         Assert-True ($status -eq 401) "private API rejects missing authorization"
     }
 
@@ -102,9 +103,11 @@ try {
 }
 catch {
     Write-Error $_
-    if (Test-Path $logPath) {
-        Write-Host "--- server log ---"
-        Get-Content $logPath -ErrorAction SilentlyContinue
+    foreach ($path in @($stdoutPath, $stderrPath)) {
+        if (Test-Path $path) {
+            Write-Host "--- $(Split-Path $path -Leaf) ---"
+            Get-Content $path -ErrorAction SilentlyContinue
+        }
     }
     exit 1
 }
