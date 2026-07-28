@@ -21,9 +21,15 @@ else
   exit 1
 fi
 systemctl reload agentsoul.service
-sleep 3
-set -a
-# shellcheck disable=SC1090
-source "$ENV_FILE"
-set +a
-curl -fsS "https://${AGENTSOUL_DOMAIN}/health"
+
+for _ in {1..30}; do
+  if curl -fsS "http://127.0.0.1:8000/health" >/dev/null 2>&1; then
+    echo "AgentSoul updated successfully."
+    exit 0
+  fi
+  sleep 2
+done
+
+echo "AgentSoul update completed, but the local health check failed." >&2
+systemctl status agentsoul.service --no-pager || true
+exit 1
