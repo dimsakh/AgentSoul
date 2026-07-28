@@ -22,9 +22,12 @@ ENV_FILE=/etc/agentsoul/agentsoul.env
 
 command -v docker >/dev/null 2>&1 || { echo "Docker is required." >&2; exit 1; }
 docker compose version >/dev/null 2>&1 || { echo "Docker Compose v2 is required." >&2; exit 1; }
+command -v rsync >/dev/null 2>&1 || { echo "rsync is required." >&2; exit 1; }
+command -v curl >/dev/null 2>&1 || { echo "curl is required." >&2; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "python3 is required." >&2; exit 1; }
 
 install -d -m 0755 "$INSTALL_DIR" "$DATA_DIR" "$BACKUP_DIR" /etc/agentsoul
-rsync -a --delete --exclude '.git' "$ROOT_DIR/" "$INSTALL_DIR/"
+rsync -a --delete "$ROOT_DIR/" "$INSTALL_DIR/"
 
 if [[ ! -s "$TOKEN_FILE" ]]; then
   umask 077
