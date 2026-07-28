@@ -1,56 +1,42 @@
 # Codex adapter
 
-AgentSoul integrates with Codex through repository instructions and a provider-neutral local event store. It does not assume undocumented Codex lifecycle hooks.
+The Codex adapter is deliberately thin. AgentSoul owns memory, retrieval, session state, and event persistence; Codex only receives a bounded context block and reports the outcome.
 
 ## Project installation
 
-After installing the Python package, run from the project directory:
-
 ```bash
 agentsoul init
-agentsoul install-project .
+agentsoul install-project /path/to/project
 ```
 
-`install-project` creates or updates only the block between:
+The installer updates only the managed AgentSoul section in `AGENTS.md`. Existing project instructions remain untouched.
 
-```text
-<!-- agentsoul:start -->
-<!-- agentsoul:end -->
-```
-
-Any existing text outside those markers is preserved. A malformed or duplicated marker pair causes a hard failure rather than destructive rewriting.
-
-## Initial event mapping
-
-| Codex activity | Canonical AgentSoul event |
-|---|---|
-| Project opened / task begins | `session.started` |
-| User correction | `knowledge.corrected` |
-| Durable decision | `decision` |
-| Command or tool failure | `tool.failed` |
-| Work completed | `session.completed` |
-
-Events can be recorded explicitly:
+## Start a session
 
 ```bash
-agentsoul emit decision \
+agentsoul session-start "repair the failed deployment" \
   --provider codex \
   --project my-project \
-  --payload '{"summary":"Use SQLite for the local MVP"}'
+  --anchors '{"domain":"deployment","situation":"incident","stakes":"data_loss"}'
 ```
 
-## Reading memory
+The command:
+
+1. creates a persistent session record under `~/.agentsoul/sessions/`;
+2. retrieves relevant cases, patterns, and principles;
+3. emits `session.started` into the canonical event log;
+4. prints a bounded Markdown context block with the session identifier.
+
+The returned memory is advisory and cannot override system, developer, user, repository, or current task instructions.
+
+## Finish a session
 
 ```bash
-agentsoul recent --limit 20
+agentsoul session-finish SESSION_ID "Rollback verified and deployment completed" --success true
 ```
 
-The first adapter is intentionally explicit and auditable. Automatic capture will be added only where Codex exposes a stable, documented integration point.
+This marks the session completed and emits `session.completed`. Outcomes are stored as session history; they are not automatically promoted into knowledge. Promotion remains explicit so an unverified agent conclusion cannot silently become a durable rule.
 
-## Migrating ClaudSoul memory
+## Current integration level
 
-```bash
-agentsoul migrate-claudsoul ~/.claude
-```
-
-Only portable Markdown, YAML, JSON, and JSONL files are copied into `~/.agentsoul/imports/claudsoul/`. Existing files are never overwritten. Conflicting incoming files receive an `.incoming` suffix for manual review.
+Codex does not need a proprietary hook API for this first implementation. The adapter works through CLI entry points and the managed `AGENTS.md` contract. A later launcher can call `session-start` and `session-finish` automatically around Codex execution without changing the shared memory format.
