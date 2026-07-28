@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentsoul"
+version = "0.1.0"
+description = "Provider-neutral cognitive memory runtime for AI agents"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "AgentSoul contributors"}]
+
+[project.scripts]
+agentsoul = "agentsoul_core.cli:main"
+
+[tool.setuptools]
+packages = ["agentsoul_core"]
