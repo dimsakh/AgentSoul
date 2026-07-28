@@ -1,0 +1,8 @@
+[Unit]
+Description=Create verified AgentSoul backup
+Requires=agentsoul.service
+After=agentsoul.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/agentsoul-backup

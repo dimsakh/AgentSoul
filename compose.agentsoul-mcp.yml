@@ -1,0 +1,18 @@
+services:
+  agentsoul-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.agentsoul-mcp
+    restart: unless-stopped
+    environment:
+      AGENTSOUL_API_TOKEN: ${AGENTSOUL_API_TOKEN:?set AGENTSOUL_API_TOKEN}
+      AGENTSOUL_HOME: /data/agentsoul
+      AGENTSOUL_HOST: 0.0.0.0
+      AGENTSOUL_PORT: 8000
+    volumes:
+      - agentsoul-memory:/data/agentsoul
+    ports:
+      - "127.0.0.1:8000:8000"
+
+volumes:
+  agentsoul-memory:
