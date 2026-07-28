@@ -110,6 +110,14 @@ class KnowledgeStore:
                 return KnowledgeItem.from_dict(json.loads(path.read_text(encoding="utf-8")))
         raise FileNotFoundError(knowledge_id)
 
+    def delete(self, knowledge_id: str) -> bool:
+        for kind in ("case", "pattern", "principle"):
+            path = self._path(kind, knowledge_id)
+            if path.exists():
+                path.unlink()
+                return True
+        return False
+
     def confirm(self, knowledge_id: str, evidence: str | None = None) -> KnowledgeItem:
         item = self.load(knowledge_id)
         item.confirmed_count += 1
