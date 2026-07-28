@@ -2,14 +2,7 @@
 set -euo pipefail
 
 if [[ ${EUID:-$(id -u)} -ne 0 ]]; then
-  echo "Run as root: sudo bash deploy/vps/install.sh <domain> <email>" >&2
-  exit 1
-fi
-
-DOMAIN=${1:-}
-EMAIL=${2:-}
-if [[ -z "$DOMAIN" ]]; then
-  echo "Usage: sudo bash deploy/vps/install.sh <domain> [acme-email]" >&2
+  echo "Run as root: sudo bash deploy/vps/install.sh" >&2
   exit 1
 fi
 
@@ -40,8 +33,6 @@ chmod 600 "$TOKEN_FILE"
 TOKEN=$(cat "$TOKEN_FILE")
 
 cat > "$ENV_FILE" <<EOF
-AGENTSOUL_DOMAIN=$DOMAIN
-ACME_EMAIL=$EMAIL
 AGENTSOUL_API_TOKEN=$TOKEN
 AGENTSOUL_DATA_DIR=$DATA_DIR
 AGENTSOUL_BACKUP_DIR=$BACKUP_DIR
@@ -59,14 +50,15 @@ systemctl enable --now agentsoul.service
 systemctl enable --now agentsoul-backup.timer
 
 for _ in {1..60}; do
-  if curl -fsS "https://$DOMAIN/health" >/dev/null 2>&1; then
-    echo "AgentSoul is available at https://$DOMAIN/ui"
+  if curl -fsS "http://127.0.0.1:8000/health" >/dev/null 2>&1; then
+    echo "AgentSoul is running locally at http://127.0.0.1:8000"
+    echo "Web UI is available through an SSH tunnel."
     echo "Bearer token stored in $TOKEN_FILE"
     exit 0
   fi
   sleep 2
 done
 
-echo "Deployment started, but HTTPS health check is not ready yet." >&2
+echo "Deployment started, but the local health check is not ready yet." >&2
 systemctl status agentsoul.service --no-pager || true
 exit 1
