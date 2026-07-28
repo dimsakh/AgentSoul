@@ -1,0 +1,46 @@
+services:
+  agentsoul:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.agentsoul-mcp
+    restart: unless-stopped
+    environment:
+      AGENTSOUL_API_TOKEN: ${AGENTSOUL_API_TOKEN:?set AGENTSOUL_API_TOKEN}
+      AGENTSOUL_HOME: /data/agentsoul
+      AGENTSOUL_HOST: 0.0.0.0
+      AGENTSOUL_PORT: 8000
+    volumes:
+      - ${AGENTSOUL_DATA_DIR:-/var/lib/agentsoul}:/data/agentsoul
+      - ${AGENTSOUL_BACKUP_DIR:-/var/backups/agentsoul}:/data/backups
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 448m
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      agentsoul:
+        condition: service_healthy
+    environment:
+      AGENTSOUL_DOMAIN: ${AGENTSOUL_DOMAIN:?set AGENTSOUL_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    mem_limit: 192m
+
+volumes:
+  caddy_data:
+  caddy_config:
