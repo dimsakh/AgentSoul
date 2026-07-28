@@ -35,9 +35,12 @@ jobs:
           tests/test_retrieval.py
           tests/test_session.py
           tests/test_hybrid.py
+          tests/test_backup.py
           tests/test_mcp_server.py
           tests/test_web_ui.py
       - name: CLI smoke test
         run: python -m agentsoul_core.cli --home .tmp-agentsoul init
+      - name: Backup CLI smoke test
+        run: python -m agentsoul_core.cli --home .tmp-agentsoul backup .tmp-agentsoul-backup.zip
       - name: Web and MCP import smoke test
         run: python -c "from agentsoul_mcp.server import app; from agentsoul_web.app import INDEX; print(app, len(INDEX))"
