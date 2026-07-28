@@ -5,6 +5,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
+from .backup import create_backup, restore_backup
 from .events import AgentEvent
 from .knowledge import KnowledgeStore
 from .migrate import migrate_claudsoul
@@ -30,6 +31,12 @@ def build_parser() -> argparse.ArgumentParser:
     install.add_argument("path", nargs="?", type=Path, default=Path.cwd())
     migrate = sub.add_parser("migrate-claudsoul", help="Import portable ClaudSoul memory files")
     migrate.add_argument("source", type=Path)
+    backup = sub.add_parser("backup", help="Create a portable verified ZIP backup")
+    backup.add_argument("destination", nargs="?", type=Path)
+    restore = sub.add_parser("restore", help="Restore a verified AgentSoul backup")
+    restore.add_argument("archive", type=Path)
+    restore.add_argument("--destination", type=Path)
+    restore.add_argument("--replace", action="store_true")
     emit = sub.add_parser("emit", help="Append a canonical event")
     emit.add_argument("event_type"); emit.add_argument("--provider", required=True); emit.add_argument("--project", required=True)
     emit.add_argument("--session"); emit.add_argument("--payload", default="{}", help="JSON object")
@@ -67,6 +74,11 @@ def main(argv: list[str] | None = None) -> int:
         path, changed = install_agents_block(args.path); print(json.dumps({"path": str(path), "changed": changed}, ensure_ascii=False)); return 0
     if args.command == "migrate-claudsoul":
         print(json.dumps(asdict(migrate_claudsoul(args.source, store.initialise())), ensure_ascii=False)); return 0
+    if args.command == "backup":
+        print(json.dumps(asdict(create_backup(store.initialise(), args.destination)), ensure_ascii=False)); return 0
+    if args.command == "restore":
+        destination = args.destination or store.initialise()
+        print(json.dumps(asdict(restore_backup(args.archive, destination, replace=args.replace)), ensure_ascii=False)); return 0
     if args.command == "emit":
         event = AgentEvent(event_type=args.event_type, provider=args.provider, project_id=args.project, session_id=args.session,
                            payload=_json_object(args.payload, "--payload")); store.append(event)
