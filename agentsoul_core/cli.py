@@ -8,6 +8,7 @@ from .events import AgentEvent
 from .knowledge import KnowledgeStore
 from .migrate import migrate_claudsoul
 from .project import install_agents_block
+from .retrieval import render_context, render_json, retrieve
 from .store import MemoryStore
 
 
@@ -61,6 +62,14 @@ def build_parser() -> argparse.ArgumentParser:
     listing = sub.add_parser("knowledge-list", help="List knowledge items")
     listing.add_argument("--kind", choices=("case", "pattern", "principle"))
     listing.add_argument("--limit", type=int, default=20)
+
+    search = sub.add_parser("knowledge-search", help="Rank relevant knowledge by text and context anchors")
+    search.add_argument("query")
+    search.add_argument("--anchors", default="{}", help="JSON object")
+    search.add_argument("--limit", type=int, default=5)
+    search.add_argument("--minimum-score", type=float, default=1.0)
+    search.add_argument("--format", choices=("json", "context"), default="json")
+    search.add_argument("--max-chars", type=int, default=4000)
     return parser
 
 
@@ -124,6 +133,20 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "knowledge-contradict":
         item = knowledge.contradict(args.knowledge_id, stated_value=args.stated_value, evidence=args.evidence)
         print(json.dumps(item.to_dict(), ensure_ascii=False))
+        return 0
+
+    if args.command == "knowledge-search":
+        results = retrieve(
+            knowledge,
+            query=args.query,
+            anchors=_json_object(args.anchors, "--anchors"),
+            limit=args.limit,
+            minimum_score=args.minimum_score,
+        )
+        if args.format == "context":
+            print(render_context(results, max_chars=args.max_chars), end="")
+        else:
+            print(render_json(results))
         return 0
 
     for item in knowledge.list_items(args.kind)[: args.limit]:
