@@ -34,5 +34,8 @@ jobs:
           tests/test_knowledge.py
           tests/test_retrieval.py
           tests/test_session.py
+          tests/test_mcp_server.py
       - name: CLI smoke test
         run: python -m agentsoul_core.cli --home .tmp-agentsoul init
+      - name: MCP import smoke test
+        run: python -c "from agentsoul_mcp.server import app; print(app)"
