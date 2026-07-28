@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 
 from .events import AgentEvent
+from .migrate import migrate_claudsoul
+from .project import install_agents_block
 from .store import MemoryStore
 
 
@@ -14,6 +16,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("init", help="Create the local AgentSoul memory layout")
+
+    install = sub.add_parser("install-project", help="Add/update the managed AgentSoul block in AGENTS.md")
+    install.add_argument("path", nargs="?", type=Path, default=Path.cwd())
+
+    migrate = sub.add_parser("migrate-claudsoul", help="Import portable ClaudSoul memory files")
+    migrate.add_argument("source", type=Path)
 
     emit = sub.add_parser("emit", help="Append a canonical event")
     emit.add_argument("event_type")
@@ -33,6 +41,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "init":
         print(store.initialise())
+        return 0
+
+    if args.command == "install-project":
+        path, changed = install_agents_block(args.path)
+        print(json.dumps({"path": str(path), "changed": changed}, ensure_ascii=False))
+        return 0
+
+    if args.command == "migrate-claudsoul":
+        destination = store.initialise()
+        result = migrate_claudsoul(args.source, destination)
+        print(json.dumps(result.__dict__, ensure_ascii=False))
         return 0
 
     if args.command == "emit":
